@@ -1,0 +1,174 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.udacity.catpoint</groupId>
+    <artifactId>catpoint-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>catpoint-security</artifactId>
+  <packaging>jar</packaging>
+
+  <dependencies>
+    <!-- UI-only dep belongs in security app -->
+    <dependency>
+      <groupId>com.miglayout</groupId>
+      <artifactId>miglayout</artifactId>
+      <version>3.7.4</version>
+    </dependency>
+
+    <!-- Bring in the image-service module -->
+    <dependency>
+      <groupId>com.udacity.catpoint</groupId>
+      <artifactId>catpoint-image-service</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- SLF4J runtime binding so logs actually print when running the app -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>1.7.36</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Needed by PretendDatabaseSecurityRepositoryImpl (Gson, TypeToken) -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.10.1</version>
+    </dependency>
+
+    <!-- Needed by Sensor (ComparisonChain) and other Guava utils -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>32.1.3-jre</version>
+    </dependency>
+
+    <!-- JUnit 5 -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.11.3</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Mockito -->
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>5.13.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <version>5.13.0</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- JUnit 5 -->
+    <dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter-api</artifactId>
+    <version>5.10.2</version>
+    <scope>test</scope>
+    </dependency>
+    <dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter-params</artifactId>
+    <version>5.10.2</version>
+    <scope>test</scope>
+    </dependency>
+    <dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter-engine</artifactId>
+    <version>5.10.2</version>
+    <scope>test</scope>
+    </dependency>
+    </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Run the app with all runtime deps on the classpath -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+            <mainClass>com.udacity.catpoint.application.CatpointApp</mainClass>
+            <classpathScope>runtime</classpathScope>
+      </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+            <useModulePath>false</useModulePath>
+        </configuration>
+      </plugin>
+      <plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-shade-plugin</artifactId>
+  <version>3.5.2</version>
+  <executions>
+    <execution>
+      <phase>package</phase>
+      <goals>
+        <goal>shade</goal>
+      </goals>
+      <configuration>
+        <!-- keep it simple; avoids rewriting your pom -->
+        <createDependencyReducedPom>false</createDependencyReducedPom>
+        <transformers>
+          <!-- sets Main-Class so `java -jar` works -->
+          <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+            <mainClass>com.udacity.catpoint.application.CatpointApp</mainClass>
+          </transformer>
+          <!-- merges service entries if any deps use them -->
+          <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+        </transformers>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.12</version>
+        <executions>
+            <execution>
+            <goals>
+                <goal>prepare-agent</goal>
+            </goals>
+            </execution>
+            <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+                <goal>report</goal>
+            </goals>
+            </execution>
+        </executions>
+        </plugin>
+    </plugins>
+  </build>
+  <reporting>
+  <plugins>
+    <plugin>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-maven-plugin</artifactId>
+      <version>4.8.6.4</version>
+      <configuration>
+        <effort>Max</effort>
+        <threshold>High</threshold> <!-- show High priority issues -->
+        <xmlOutput>false</xmlOutput>
+      </configuration>
+    </plugin>
+  </plugins>
+</reporting>
+</project>
