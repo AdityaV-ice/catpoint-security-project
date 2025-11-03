@@ -28,12 +28,18 @@ public class SecurityService {
             setAlarmStatus(AlarmStatus.NO_ALARM);
         } else {
             // Requirement 10: when arming, reset all sensors to inactive
-            for (Sensor s : repo.getSensors()) {
+            // iterate a copy so updates won't throw ConcurrentModificationException
+            Set<Sensor> sensorsCopy = new HashSet<>(repo.getSensors());
+            for (Sensor s : sensorsCopy) {
                 if (Boolean.TRUE.equals(s.getActive())) {
                     s.setActive(false);
                     repo.updateSensor(s);
                 }
             }
+            // notify listeners that sensor states changed (so GUI can refresh)
+            statusListeners.forEach(sl -> {
+                try { sl.sensorStatusChanged(); } catch (Exception ignored) {}
+            });
         }
 
         repo.setArmingStatus(armingStatus);
@@ -49,42 +55,56 @@ public class SecurityService {
 
     public void setAlarmStatus(AlarmStatus status) {
         repo.setAlarmStatus(status);
-        statusListeners.forEach(sl -> sl.notify(status));
+        statusListeners.forEach(sl -> {
+            try { sl.notify(status); } catch (Exception ignored) {}
+        });
     }
 
     public void changeSensorActivationStatus(Sensor sensor, Boolean active) {
-    // Requirement 4: If alarm is active, sensor changes do NOT affect alarm
-    if (repo.getAlarmStatus() == AlarmStatus.ALARM) {
+        // Requirement 4: If alarm is active, sensor changes do NOT affect alarm,
+        // but still persist the sensor change.
+        if (repo.getAlarmStatus() == AlarmStatus.ALARM) {
+            sensor.setActive(active);
+            repo.updateSensor(sensor);
+            // inform UI listeners about sensor change
+            statusListeners.forEach(sl -> {
+                try { sl.sensorStatusChanged(); } catch (Exception ignored) {}
+            });
+            return;
+        }
+
+        boolean wasActive = Boolean.TRUE.equals(sensor.getActive());
+        boolean becomesActive = Boolean.TRUE.equals(active);
+
+        // Persist the new sensor state BEFORE we run alarm logic so repo.getSensors()
+        // reflects the change inside handleSensorDeactivated() / handleSensorActivated().
         sensor.setActive(active);
         repo.updateSensor(sensor);
-        return;
-    }
 
-    boolean wasActive = Boolean.TRUE.equals(sensor.getActive());
-    boolean becomesActive = Boolean.TRUE.equals(active);
-
-    // NEW: Requirement 5 — activating an already-active sensor while PENDING => ALARM
-    if (wasActive && becomesActive) {
-        if (repo.getAlarmStatus() == AlarmStatus.PENDING_ALARM) {
-            setAlarmStatus(AlarmStatus.ALARM);
+        // If the sensor was active and is activated again while pending, escalate to ALARM.
+        if (wasActive && becomesActive) {
+            if (repo.getAlarmStatus() == AlarmStatus.PENDING_ALARM) {
+                setAlarmStatus(AlarmStatus.ALARM);
+            }
+            // notify about sensor change and exit
+            statusListeners.forEach(sl -> {
+                try { sl.sensorStatusChanged(); } catch (Exception ignored) {}
+            });
+            return;
         }
-        // Persist state and stop (no other transitions apply)
-        sensor.setActive(true);
-        repo.updateSensor(sensor);
-        return;
-    }
 
-    if (!wasActive && becomesActive) {
-        // first-time activation
-        handleSensorActivated();
-    } else if (wasActive && !becomesActive) {
-        // deactivation
-        handleSensorDeactivated();
+        if (!wasActive && becomesActive) {
+            // first-time activation
+            handleSensorActivated();
+        } else if (wasActive && !becomesActive) {
+            // deactivation (and handleSensorDeactivated will check repo.getSensors())
+            handleSensorDeactivated();
+        }
+        // notify listeners about sensor change
+        statusListeners.forEach(sl -> {
+            try { sl.sensorStatusChanged(); } catch (Exception ignored) {}
+        });
     }
-    // Requirement 6 is implicitly satisfied: inactive -> inactive does nothing to alarm
-    sensor.setActive(active);
-    repo.updateSensor(sensor);
-}
 
 
     public void processImage(BufferedImage currentCameraImage) {
@@ -139,6 +159,8 @@ public class SecurityService {
                 setAlarmStatus(AlarmStatus.NO_ALARM);
             }
         }
-        statusListeners.forEach(sl -> sl.catDetected(cat));
+        statusListeners.forEach(sl -> {
+            try { sl.catDetected(cat); } catch (Exception ignored) {}
+        });
     }
 }
