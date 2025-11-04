@@ -7,12 +7,14 @@ import com.udacity.catpoint.service.StyleService;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Panel that allows users to add sensors to their system. Sensors may be
  * manually set to "active" and "inactive" to test the system.
  */
-public class SensorPanel extends JPanel {
+public class SensorPanel extends JPanel implements StatusListener {
 
     private SecurityService securityService;
 
@@ -20,7 +22,7 @@ public class SensorPanel extends JPanel {
     private JLabel newSensorName = new JLabel("Name:");
     private JLabel newSensorType = new JLabel("Sensor Type:");
     private JTextField newSensorNameField = new JTextField();
-    private JComboBox newSensorTypeDropdown = new JComboBox(SensorType.values());
+    private JComboBox<SensorType> newSensorTypeDropdown = new JComboBox<>(SensorType.values());
     private JButton addNewSensorButton = new JButton("Add New Sensor");
 
     private JPanel sensorListPanel;
@@ -41,6 +43,9 @@ public class SensorPanel extends JPanel {
         sensorListPanel.setLayout(new MigLayout());
 
         updateSensorList(sensorListPanel);
+
+        // Register to receive status updates so this panel reflects changes
+        securityService.addStatusListener(this);
 
         add(panelLabel, "wrap");
         add(newSensorPanel, "span");
@@ -68,7 +73,11 @@ public class SensorPanel extends JPanel {
      */
     private void updateSensorList(JPanel p) {
         p.removeAll();
-        securityService.getSensors().stream().sorted().forEach(s -> {
+
+        // sort by natural order (Sensor implements Comparable in starter project)
+        // create a defensive copy so concurrency doesn't bite us
+        Set<Sensor> sensors = new HashSet<>(securityService.getSensors());
+        sensors.stream().sorted().forEach(s -> {
             JLabel sensorLabel = new JLabel(String.format("%s(%s): %s", s.getName(),  s.getSensorType().toString(),(s.getActive() ? "Active" : "Inactive")));
             JButton sensorToggleButton = new JButton((s.getActive() ? "Deactivate" : "Activate"));
             JButton sensorRemoveButton = new JButton("Remove Sensor");
@@ -115,6 +124,24 @@ public class SensorPanel extends JPanel {
      */
     private void removeSensor(Sensor sensor) {
         securityService.removeSensor(sensor);
+        updateSensorList(sensorListPanel);
+    }
+
+    /* ---------- StatusListener implementations ---------- */
+
+    @Override
+    public void notify(com.udacity.catpoint.data.AlarmStatus status) {
+        // no special alarm UI here
+    }
+
+    @Override
+    public void catDetected(boolean catDetected) {
+        // no camera behavior here
+    }
+
+    @Override
+    public void sensorStatusChanged() {
+        // refresh list when sensors change elsewhere (for example on arming)
         updateSensorList(sensorListPanel);
     }
 }

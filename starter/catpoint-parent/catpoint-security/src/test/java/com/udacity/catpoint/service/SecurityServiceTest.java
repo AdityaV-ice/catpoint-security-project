@@ -17,6 +17,8 @@ import java.awt.image.BufferedImage;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.Mockito.*;
 @MockitoSettings(strictness = Strictness.LENIENT)
 @ExtendWith(MockitoExtension.class)
@@ -66,10 +68,25 @@ class SecurityServiceTest {
 
     // 3) Pending and all sensors inactive -> NO_ALARM
     @Test
-    void pending_allInactive_backToNoAlarm() {
+void pending_allInactive_backToNoAlarm() {
+        // Arrange: alarm is PENDING, there is exactly one active sensor in the repo
         when(repo.getAlarmStatus()).thenReturn(AlarmStatus.PENDING_ALARM);
-        service.changeSensorActivationStatus(newSensor(true), false);
+
+        Sensor s = new Sensor("S1", SensorType.DOOR);
+        s.setActive(true);
+
+        // Important: repo.getSensors() must return the same Sensor instance,
+        // so when SecurityService flips it to inactive, the stream sees no actives.
+        when(repo.getSensors()).thenReturn(Set.of(s));
+
+        // Act: deactivate that only-active sensor
+        service.changeSensorActivationStatus(s, false);
+
+        // Assert: pending + now all sensors inactive => NO_ALARM
         verify(repo).setAlarmStatus(AlarmStatus.NO_ALARM);
+
+        // (optional sanity check)
+        verify(repo).updateSensor(s);
     }
 
     // 4) If alarm active, sensor changes don’t affect alarm

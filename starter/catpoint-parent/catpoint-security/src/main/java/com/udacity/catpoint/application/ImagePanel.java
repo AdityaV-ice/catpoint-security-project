@@ -22,8 +22,8 @@ public class ImagePanel extends JPanel implements StatusListener {
     private JLabel cameraLabel;
     private BufferedImage currentCameraImage;
 
-    private int IMAGE_WIDTH = 300;
-    private int IMAGE_HEIGHT = 225;
+    private final int IMAGE_WIDTH = 300;
+    private final int IMAGE_HEIGHT = 225;
 
     public ImagePanel(SecurityService securityService) {
         super();
@@ -73,7 +73,13 @@ public class ImagePanel extends JPanel implements StatusListener {
 
     @Override
     public void notify(AlarmStatus status) {
-        //no behavior necessary
+        // Visual cue when alarm is active
+        if (status == AlarmStatus.ALARM) {
+            cameraLabel.setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+        } else {
+            cameraLabel.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+        }
+        repaint();
     }
 
     @Override
@@ -87,6 +93,7 @@ public class ImagePanel extends JPanel implements StatusListener {
 
     @Override
     public void sensorStatusChanged() {
-        //no behavior necessary
+        // nothing specific to do here, but repaint to be safe
+        repaint();
     }
 }

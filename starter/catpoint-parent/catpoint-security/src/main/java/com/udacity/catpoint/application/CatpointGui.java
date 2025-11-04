@@ -30,6 +30,12 @@ public class CatpointGui extends JFrame {
         setTitle("Very Secure App");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        // Register all panels as listeners so they refresh when sensors/alarms change
+        securityService.addStatusListener(displayPanel);
+        securityService.addStatusListener(controlPanel);
+        securityService.addStatusListener(sensorPanel);
+        securityService.addStatusListener(imagePanel);
+
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new MigLayout());
         mainPanel.add(displayPanel, "wrap");

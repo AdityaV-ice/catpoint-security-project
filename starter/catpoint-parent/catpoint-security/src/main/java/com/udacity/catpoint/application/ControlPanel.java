@@ -1,6 +1,7 @@
 package com.udacity.catpoint.application;
 
 import com.udacity.catpoint.data.ArmingStatus;
+import com.udacity.catpoint.data.AlarmStatus;
 import com.udacity.catpoint.service.SecurityService;
 import com.udacity.catpoint.service.StyleService;
 import net.miginfocom.swing.MigLayout;
@@ -13,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * JPanel containing the buttons to manipulate arming status of the system.
  */
-public class ControlPanel extends JPanel {
+public class ControlPanel extends JPanel implements StatusListener {
 
     private SecurityService securityService;
     private Map<ArmingStatus, JButton> buttonMap;
@@ -23,6 +24,7 @@ public class ControlPanel extends JPanel {
         super();
         setLayout(new MigLayout());
         this.securityService = securityService;
+
 
         JLabel panelLabel = new JLabel("System Control");
         panelLabel.setFont(StyleService.HEADING_FONT);
@@ -47,6 +49,26 @@ public class ControlPanel extends JPanel {
         ArmingStatus currentStatus = securityService.getArmingStatus();
         buttonMap.get(currentStatus).setBackground(currentStatus.getColor());
 
+        // register to receive updates so that if the status changes externally, buttons update
+        securityService.addStatusListener(this);
+    }
 
+    @Override
+    public void notify(AlarmStatus status) {
+        // alarm status does not directly affect arming buttons, but refresh to be safe
+        ArmingStatus current = securityService.getArmingStatus();
+        buttonMap.forEach((s, btn) -> btn.setBackground(s == current ? s.getColor() : null));
+        repaint();
+    }
+
+    @Override
+    public void catDetected(boolean catDetected) {
+        // no action
+    }
+
+    @Override
+    public void sensorStatusChanged() {
+        // If sensor changes, the arming buttons do not change, but revalidate to be safe
+        repaint();
     }
 }
