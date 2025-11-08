@@ -1,6 +1,7 @@
-package com.udacity.catpoint.service;
+package com.udacity.catpoint.security.service;
 
-import com.udacity.catpoint.application.StatusListener;
+import com.udacity.catpoint.image.service.ImageService;
+import com.udacity.catpoint.security.application.StatusListener;
 import com.udacity.catpoint.data.*;
 
 import java.awt.image.BufferedImage;

@@ -15,10 +15,10 @@
   <dependencies>
     <!-- UI-only dep belongs in security app -->
     <dependency>
-      <groupId>com.miglayout</groupId>
-      <artifactId>miglayout</artifactId>
-      <version>3.7.4</version>
-    </dependency>
+  <groupId>com.miglayout</groupId>
+  <artifactId>miglayout-swing</artifactId>
+  <version>5.3</version>
+  </dependency>
 
     <!-- Bring in the image-service module -->
     <dependency>
@@ -99,9 +99,9 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.5.1</version>
         <configuration>
-            <mainClass>com.udacity.catpoint.application.CatpointApp</mainClass>
-            <classpathScope>runtime</classpathScope>
-      </configuration>
+          <mainClass>com.udacity.catpoint.security.application.CatpointApp</mainClass>
+          <classpathScope>runtime</classpathScope>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -118,18 +118,13 @@
   <executions>
     <execution>
       <phase>package</phase>
-      <goals>
-        <goal>shade</goal>
-      </goals>
+      <goals><goal>shade</goal></goals>
       <configuration>
-        <!-- keep it simple; avoids rewriting your pom -->
         <createDependencyReducedPom>false</createDependencyReducedPom>
         <transformers>
-          <!-- sets Main-Class so `java -jar` works -->
           <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-            <mainClass>com.udacity.catpoint.application.CatpointApp</mainClass>
+            <mainClass>com.udacity.catpoint.security.application.CatpointApp</mainClass>
           </transformer>
-          <!-- merges service entries if any deps use them -->
           <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
         </transformers>
       </configuration>
@@ -171,4 +166,23 @@
     </plugin>
   </plugins>
 </reporting>
+<profiles>
+  <profile>
+    <id>run</id>
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>3.6.2</version>
+          <configuration>
+            <mainClass>com.udacity.catpoint.security.application.CatpointApp</mainClass>
+            <classpathScope>runtime</classpathScope>
+            <skip>false</skip>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+  </profile>
+</profiles>
 </project>

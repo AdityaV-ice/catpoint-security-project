@@ -1,6 +1,6 @@
 package com.udacity.catpoint.data;
 
-import com.google.common.reflect.TypeToken;
+import com.google.gson.reflect.TypeToken;
 import com.google.gson.Gson;
 
 import java.lang.reflect.Type;
